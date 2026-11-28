@@ -1,5 +1,6 @@
 package com.example.ui.browser
 
+import android.graphics.Color as AndroidColor
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -68,6 +69,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.BuildConfig
 import com.example.R
+import com.example.data.AppThemePreset
 import com.example.data.DefaultOrientation
 import com.example.data.LicenseTier
 import com.example.data.ProActivationResult
@@ -93,6 +95,10 @@ import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.VioletAccent
 import com.example.ui.theme.VioletContainer
 
+
+private fun presetSurfaceColor(preset: AppThemePreset): Color =
+    Color(AndroidColor.parseColor(preset.config.surface))
+
 @Composable
 fun SettingsScreen(
     uiState: LibraryUiState,
@@ -104,8 +110,7 @@ fun SettingsScreen(
     onClearPin: () -> Unit,
     onActivateProCode: (String, (ProActivationResult) -> Unit) -> Unit,
     onGenerateBuyerCode: () -> String,
-    onToggleRemoteTheme: (Boolean) -> Unit,
-    onRefreshRemoteTheme: () -> Unit,
+    onSelectAppTheme: (AppThemePreset) -> Unit,
     onCheckForUpdates: () -> Unit,
     onDownloadAndInstallUpdate: () -> Unit,
     onBack: () -> Unit
@@ -451,10 +456,10 @@ fun SettingsScreen(
                     }
                 }
 
-                // Remote Theme
+                // App Theme
                 SettingsSectionHeader(
                     icon = Icons.Rounded.Refresh,
-                    title = "Appearance & Theme"
+                    title = "App Theme"
                 )
                 Surface(
                     color = DeepNavySurface,
@@ -467,88 +472,64 @@ fun SettingsScreen(
                             .padding(horizontal = 16.dp, vertical = 10.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = if (uiState.themePreferences.useRemoteTheme) {
-                                        "Remote theme: ${uiState.themePreferences.activeTheme.themeName}"
-                                    } else {
-                                        "Midnight Indigo (built-in)"
-                                    },
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = TextPrimary
+                        Text(
+                            text = "Choose a color style for the player",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextMuted
+                        )
+                        AppThemePreset.entries.forEach { preset ->
+                            val selected = uiState.appThemePreset == preset
+                            val accent = Color(AndroidColor.parseColor(preset.config.primaryAccent))
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .clickable { onSelectAppTheme(preset) }
+                                    .testTag("app_theme_${preset.id}"),
+                                color = if (selected) presetSurfaceColor(preset) else Color.Transparent,
+                                shape = RoundedCornerShape(14.dp),
+                                border = BorderStroke(
+                                    1.dp,
+                                    if (selected) accent else CardOutline
                                 )
-                                Text(
-                                    text = if (uiState.themePreferences.useRemoteTheme) {
-                                        "Sync colors from GitHub theme.json"
-                                    } else {
-                                        "Remote theme sync is disabled"
-                                    },
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = TextMuted
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Switch(
-                                checked = uiState.themePreferences.useRemoteTheme,
-                                onCheckedChange = onToggleRemoteTheme,
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = AmoledBlack,
-                                    checkedTrackColor = ElectricCyan
-                                ),
-                                modifier = Modifier.testTag("switch_remote_theme")
-                            )
-                        }
-
-                        HorizontalDivider(color = CardOutline)
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = uiState.themeSyncMessage
-                                    ?: uiState.themePreferences.lastError
-                                    ?: "Remote theme contains colors only; local media stays on device.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (uiState.themePreferences.lastError != null) {
-                                    CoralError
-                                } else {
-                                    TextMuted
-                                },
-                                modifier = Modifier.weight(1f)
-                            )
-                            TextButton(
-                                onClick = onRefreshRemoteTheme,
-                                enabled = uiState.themePreferences.useRemoteTheme &&
-                                    !uiState.isRefreshingTheme,
-                                modifier = Modifier.testTag("refresh_remote_theme")
                             ) {
-                                if (uiState.isRefreshingTheme) {
-                                    CircularProgressIndicator(
-                                        color = ElectricCyan,
-                                        strokeWidth = 2.dp,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Surface(
+                                        modifier = Modifier.size(18.dp),
+                                        color = accent,
+                                        shape = RoundedCornerShape(9.dp)
+                                    ) {}
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = preset.displayName,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = TextPrimary
+                                        )
+                                        Text(
+                                            text = preset.config.primaryAccent,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = if (selected) accent else TextMuted
+                                        )
+                                    }
+                                    if (selected) {
+                                        Icon(Icons.Rounded.Check, contentDescription = null, tint = accent)
+                                    }
                                 }
-                                Text(
-                                    text = if (uiState.isRefreshingTheme) "Syncing" else "Sync now",
-                                    color = ElectricCyan
-                                )
                             }
                         }
                     }
                 }
 
-                // GitHub OTA Updates
+                // App Updates
                 SettingsSectionHeader(
                     icon = Icons.Rounded.VerifiedUser,
-                    title = "App Updates"
+                    title = "Check for Updates"
                 )
                 Surface(
                     color = DeepNavySurface,
@@ -562,20 +543,26 @@ fun SettingsScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = "GitHub OTA updates",
+                            text = "Check for Updates",
                             style = MaterialTheme.typography.titleMedium,
                             color = TextPrimary
                         )
                         Text(
-                            text = uiState.appUpdate.message
-                                ?: "Check GitHub for a signed Alt Player APK. No media data is uploaded.",
+                            text = "Check for the latest version and improvements",
                             style = MaterialTheme.typography.bodySmall,
-                            color = if (uiState.appUpdate.status == UpdateStatus.ERROR) {
-                                CoralError
-                            } else {
-                                TextMuted
-                            }
+                            color = TextMuted
                         )
+                        uiState.appUpdate.message?.let { message ->
+                            Text(
+                                text = message,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (uiState.appUpdate.status == UpdateStatus.ERROR) {
+                                    CoralError
+                                } else {
+                                    TextMuted
+                                }
+                            )
+                        }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.End,

@@ -15,7 +15,7 @@
     <string name="tab_all_videos">Videos</string>
     <string name="tab_audio">Audio</string>
     <string name="permission_title">Access Local Media in Alt Player</string>
-    <string name="permission_description">Alt Player scans only your device storage locally to organize videos (MP4, MKV, AVI, WebM) and audio (MP3, M4A, AAC, WAV, FLAC, OGG, Opus). Your media and library never leave this device. Network access is limited to optional GitHub updates and theme sync.</string>
+    <string name="permission_description">Alt Player scans only your device storage locally to organize videos (MP4, MKV, AVI, WebM) and audio (MP3, M4A, AAC, WAV, FLAC, OGG, Opus). Your media and library never leave this device. Network access is limited to app updates and optional color synchronization.</string>
     <string name="grant_permission">Allow Media Access</string>
     <string name="pick_video_directly">Open Media File</string>
     <string name="partial_access_banner">Showing selected media only. Grant full access to browse all folders and audio.</string>
@@ -50,7 +50,7 @@
     <string name="new_badge">NEW</string>
     <string name="hidden_badge">HIDDEN</string>
     <string name="privacy_sheet_title">Alt Player • Offline &amp; Private</string>
-    <string name="privacy_sheet_body">Alt Player plays local media entirely on this device with zero analytics, zero telemetry, and zero ads. Network access is used only for GitHub OTA updates and optional theme colors; no media or library data is uploaded.</string>
+    <string name="privacy_sheet_body">Alt Player plays local media entirely on this device with zero analytics, zero telemetry, and zero ads. Network access is used only to check for app improvements and optional color updates; no media or library data is uploaded.</string>
     <string name="settings_title">Settings</string>
     <string name="private_vault_title">Private Vault</string>
     <string name="toggle_layout_view">Switch list or grid view</string>

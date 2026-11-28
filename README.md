@@ -22,7 +22,7 @@ Media scanning, playback, subtitles, the private vault, and playback history rem
 
 Network access is limited to two explicit app features:
 
-- GitHub release metadata and APK downloads for the in-app OTA updater.
-- The optional color-only `theme.json` sync from this repository.
+- Release metadata and APK downloads for in-app updates.
+- Optional color-only palette synchronization.
 
-The built-in Midnight Indigo palette remains available when remote theme sync is disabled or unavailable. The remote theme document contains colors only and never receives media information.
+The built-in Pine Mint palette and five local color presets remain available without synchronization. Color documents contain no media information and never receive media data.

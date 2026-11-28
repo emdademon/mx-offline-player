@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import com.example.data.AppThemeConfig
+import com.example.data.AppThemePreset
 import com.example.data.GitHubUpdateRepository
 import com.example.data.MediaStoreVideoRepository
 import com.example.data.SortOption
@@ -36,7 +37,7 @@ class VeloPlayCoreTest {
             PackageManager.GET_PERMISSIONS
         )
         val requested = pkgInfo.requestedPermissions?.toList().orEmpty()
-        assertTrue("INTERNET is required for GitHub OTA and theme sync", requested.contains(Manifest.permission.INTERNET))
+        assertTrue("INTERNET is required for update checks and color sync", requested.contains(Manifest.permission.INTERNET))
         assertTrue(
             "ACCESS_NETWORK_STATE is required for update checks",
             requested.contains(Manifest.permission.ACCESS_NETWORK_STATE)
@@ -55,12 +56,23 @@ class VeloPlayCoreTest {
     }
 
     @Test
-    fun `remote theme defaults and OTA version comparison are deterministic`() {
+    fun `local theme defaults and numeric version comparison are deterministic`() {
         val theme = AppThemeConfig.parse(AppThemeConfig.DEFAULT_JSON)
-        assertEquals("Midnight Indigo", theme.themeName)
-        assertEquals("#090A0F", theme.background)
-        assertEquals("#6366F1", theme.primaryAccent)
+        assertEquals("Pine Mint", theme.themeName)
+        assertEquals("#070A09", theme.background)
+        assertEquals("#0F1614", theme.surface)
+        assertEquals("#2EE58F", theme.primaryAccent)
+        assertEquals("#11785B", theme.secondaryAccent)
+        assertEquals(
+            listOf("Pine Mint", "Midnight Indigo", "Obsidian Cyan", "Crimson Noir", "Cinema Gold"),
+            AppThemePreset.entries.map { it.displayName }
+        )
+        assertEquals("#6366F1", AppThemePreset.MIDNIGHT_INDIGO.config.primaryAccent)
+        assertEquals("#06B6D4", AppThemePreset.OBSIDIAN_CYAN.config.primaryAccent)
+        assertEquals("#F43F5E", AppThemePreset.CRIMSON_NOIR.config.primaryAccent)
+        assertEquals("#F59E0B", AppThemePreset.CINEMA_GOLD.config.primaryAccent)
         assertTrue(GitHubUpdateRepository.isVersionNewer("v1.3", "1.2"))
+        assertTrue(GitHubUpdateRepository.isVersionNewer("1.10.0", "1.9.9"))
         assertFalse(GitHubUpdateRepository.isVersionNewer("1.2", "1.2.0"))
         assertFalse(GitHubUpdateRepository.isVersionNewer("1.1", "1.2"))
     }

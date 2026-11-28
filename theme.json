@@ -1,10 +1,10 @@
 {
-  "themeName": "Midnight Indigo",
-  "background": "#090A0F",
-  "surface": "#12151E",
-  "border": "#1E2433",
-  "primaryAccent": "#6366F1",
-  "secondaryAccent": "#38BDF8",
-  "textPrimary": "#F8FAFC",
-  "textSecondary": "#94A3B8"
+  "themeName": "Pine Mint",
+  "background": "#070A09",
+  "surface": "#0F1614",
+  "border": "#1C3329",
+  "primaryAccent": "#2EE58F",
+  "secondaryAccent": "#11785B",
+  "textPrimary": "#F2FFF8",
+  "textSecondary": "#9DB7AA"
 }

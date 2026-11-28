@@ -125,7 +125,7 @@ fun ActivationScreen(
                     text = if (trialExpired) {
                         "Your 3-day free trial has ended. Enter an activation code to continue enjoying Alt Player Pro."
                     } else {
-                        "Studio-grade local video & audio playback with zero ads and zero telemetry. Optional network access is limited to GitHub updates and theme colors."
+                        "Studio-grade local video & audio playback with zero ads and zero telemetry. Optional network access is limited to app updates and theme colors."
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = TextSecondary,

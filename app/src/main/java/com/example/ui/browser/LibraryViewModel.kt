@@ -9,6 +9,7 @@ import android.provider.MediaStore
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.BuildConfig
+import com.example.data.AppThemePreset
 import com.example.data.AppUpdateUiState
 import com.example.data.ApkInstallResult
 import com.example.data.DefaultOrientation
@@ -23,9 +24,7 @@ import com.example.data.PrivateVaultRepository
 import com.example.data.ProActivationResult
 import com.example.data.ProLicenseManager
 import com.example.data.ProLicenseState
-import com.example.data.RemoteThemeRepository
 import com.example.data.ResumeBehavior
-import com.example.data.ThemePreferences
 import com.example.data.UpdateStatus
 import com.example.data.SortOption
 import com.example.data.SortOrder
@@ -40,7 +39,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -69,9 +67,7 @@ data class LibraryUiState(
     val privatePinHash: String? = null,
     val subtitleStyle: SubtitleStyleConfig = SubtitleStyleConfig(),
     val proLicense: ProLicenseState = ProLicenseState(),
-    val themePreferences: ThemePreferences = ThemePreferences(),
-    val isRefreshingTheme: Boolean = false,
-    val themeSyncMessage: String? = null,
+    val appThemePreset: AppThemePreset = AppThemePreset.PINE_MINT,
     val appUpdate: AppUpdateUiState = AppUpdateUiState(),
     val vaultVideos: List<VideoItem> = emptyList(),
     val positionsByUri: Map<String, Long> = emptyMap(),
@@ -93,7 +89,6 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     private val videoRepo = MediaStoreVideoRepository(application)
     private val prefsRepo = PlaybackPreferencesRepository(application)
     private val vaultRepo = PrivateVaultRepository(application)
-    private val themeRepo = RemoteThemeRepository(application)
     private val updateRepo = GitHubUpdateRepository(application)
 
     private val _uiState = MutableStateFlow(LibraryUiState())
@@ -124,6 +119,7 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
                             privatePinHash = snapshot.privatePinHash,
                             subtitleStyle = snapshot.subtitleStyle,
                             proLicense = snapshot.proLicense,
+                            appThemePreset = snapshot.appThemePreset,
                             isPrefsLoaded = true,
                             positionsByUri = snapshot.positionsByUri,
                             watchedUris = snapshot.watchedUris,
@@ -131,16 +127,6 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
                         )
                     )
                 }
-            }
-        }
-        viewModelScope.launch {
-            themeRepo.preferencesFlow.collect { preferences ->
-                _uiState.update { it.copy(themePreferences = preferences) }
-            }
-        }
-        viewModelScope.launch {
-            if (themeRepo.preferencesFlow.first().useRemoteTheme) {
-                refreshRemoteTheme()
             }
         }
         checkForUpdates(silent = true)
@@ -257,39 +243,9 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch { prefsRepo.saveSubtitleStyle(style) }
     }
 
-    fun setRemoteThemeEnabled(enabled: Boolean) {
-        _uiState.update {
-            it.copy(
-                themePreferences = it.themePreferences.copy(useRemoteTheme = enabled),
-                themeSyncMessage = null
-            )
-        }
-        viewModelScope.launch { themeRepo.setRemoteThemeEnabled(enabled) }
-        if (enabled) refreshRemoteTheme(force = true)
-    }
-
-    fun refreshRemoteTheme(force: Boolean = false) {
-        if (!force && !_uiState.value.themePreferences.useRemoteTheme) return
-        _uiState.update { it.copy(isRefreshingTheme = true, themeSyncMessage = null) }
-        viewModelScope.launch {
-            val result = themeRepo.fetchAndStoreRemoteTheme()
-            result.onSuccess { theme ->
-                _uiState.update {
-                    it.copy(
-                        isRefreshingTheme = false,
-                        themeSyncMessage = "Synced ${theme.themeName}"
-                    )
-                }
-            }.onFailure { error ->
-                _uiState.update {
-                    it.copy(
-                        isRefreshingTheme = false,
-                        themeSyncMessage = error.message?.takeIf { message -> message.isNotBlank() }
-                            ?: "Theme sync failed"
-                    )
-                }
-            }
-        }
+    fun setAppThemePreset(preset: AppThemePreset) {
+        _uiState.update { it.copy(appThemePreset = preset) }
+        viewModelScope.launch { prefsRepo.saveAppThemePreset(preset) }
     }
 
     fun checkForUpdates(silent: Boolean = false) {
@@ -299,7 +255,7 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
                 it.copy(
                     appUpdate = AppUpdateUiState(
                         status = UpdateStatus.CHECKING,
-                        message = "Checking GitHub for updates…"
+                        message = "Checking for updates…"
                     )
                 )
             }
@@ -333,8 +289,7 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
                     it.copy(
                         appUpdate = AppUpdateUiState(
                             status = UpdateStatus.ERROR,
-                            message = error.message?.takeIf { message -> message.isNotBlank() }
-                                ?: "Could not check GitHub for updates."
+                            message = "Could not check for updates."
                         )
                     )
                 }
@@ -382,7 +337,7 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
                             it.copy(
                                 appUpdate = it.appUpdate.copy(
                                     status = UpdateStatus.ERROR,
-                                    message = error.message ?: "Could not open Android installer."
+                                    message = "Could not open the installer."
                                 )
                             )
                         }
@@ -392,7 +347,7 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
                     it.copy(
                         appUpdate = it.appUpdate.copy(
                             status = UpdateStatus.ERROR,
-                            message = error.message ?: "Update download failed."
+                            message = "Update download failed."
                         )
                     )
                 }

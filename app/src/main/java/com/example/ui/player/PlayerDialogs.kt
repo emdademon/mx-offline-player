@@ -271,7 +271,7 @@ fun TrackSelectorSheet(
                 val isSelected = selectedExternalId == ext.id
                 SelectableTrackRow(
                     title = ext.displayName,
-                    subtitle = "External SRT • ${ext.cues.size} cues",
+                    subtitle = "External SRT • ${ext.cues.size} ${if (ext.cues.size == 1) "cue" else "cues"}",
                     selected = isSelected,
                     onClick = { onSelectExternalSubtitle(ext) },
                     modifier = Modifier.testTag("external_srt_${ext.id}")
