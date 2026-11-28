@@ -1335,7 +1335,7 @@ fun PrivacyShieldSheet(
                 ) {
                     Icon(Icons.Rounded.Shield, contentDescription = null, tint = ElectricCyan)
                     Text(
-                        text = "Network is limited to GitHub updates and theme colors",
+                        text = "Network is limited to app updates and theme colors",
                         style = MaterialTheme.typography.labelMedium,
                         color = TextPrimary
                     )

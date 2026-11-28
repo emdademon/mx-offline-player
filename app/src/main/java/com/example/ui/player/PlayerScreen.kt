@@ -437,7 +437,9 @@ fun PlayerScreen(
                 DefaultOrientation.PORTRAIT ->
                     activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
                 DefaultOrientation.AUTO ->
-                    activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                    // Explicitly hand rotation back to the physical sensors. UNSPECIFIED can
+                    // inherit a stale lock from a previous manual Rotate action.
+                    activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
             }
         }
     }

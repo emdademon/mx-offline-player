@@ -18,10 +18,7 @@ import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 
-/**
- * The small, deliberately limited color document fetched from GitHub. It contains no media
- * information and is kept separate from the local media repositories.
- */
+/** A validated color palette that is safe to keep separate from local media state. */
 data class AppThemeConfig(
     val themeName: String,
     val background: String,
@@ -35,26 +32,26 @@ data class AppThemeConfig(
     companion object {
         const val DEFAULT_JSON = """
 {
-  "themeName": "Midnight Indigo",
-  "background": "#090A0F",
-  "surface": "#12151E",
-  "border": "#1E2433",
-  "primaryAccent": "#6366F1",
-  "secondaryAccent": "#38BDF8",
-  "textPrimary": "#F8FAFC",
-  "textSecondary": "#94A3B8"
+  "themeName": "Pine Mint",
+  "background": "#070A09",
+  "surface": "#0F1614",
+  "border": "#1C3329",
+  "primaryAccent": "#2EE58F",
+  "secondaryAccent": "#11785B",
+  "textPrimary": "#F2FFF8",
+  "textSecondary": "#9DB7AA"
 }
 """
 
         val DEFAULT = AppThemeConfig(
-            themeName = "Midnight Indigo",
-            background = "#090A0F",
-            surface = "#12151E",
-            border = "#1E2433",
-            primaryAccent = "#6366F1",
-            secondaryAccent = "#38BDF8",
-            textPrimary = "#F8FAFC",
-            textSecondary = "#94A3B8"
+            themeName = "Pine Mint",
+            background = "#070A09",
+            surface = "#0F1614",
+            border = "#1C3329",
+            primaryAccent = "#2EE58F",
+            secondaryAccent = "#11785B",
+            textPrimary = "#F2FFF8",
+            textSecondary = "#9DB7AA"
         )
 
         private val hexColorPattern = Regex("^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$")
@@ -63,7 +60,7 @@ data class AppThemeConfig(
         fun fromJson(rawJson: String?): AppThemeConfig =
             runCatching { parse(rawJson.orEmpty()) }.getOrElse { DEFAULT }
 
-        /** Strict parser used before a remote document is persisted. */
+        /** Strict parser used before a downloaded document is persisted. */
         fun parse(rawJson: String): AppThemeConfig {
             val json = JSONObject(rawJson)
             fun requiredName(key: String): String {
@@ -92,13 +89,87 @@ data class AppThemeConfig(
     }
 }
 
+enum class AppThemePreset(
+    val id: String,
+    val displayName: String,
+    val config: AppThemeConfig
+) {
+    PINE_MINT(
+        id = "pine_mint",
+        displayName = "Pine Mint",
+        config = AppThemeConfig.DEFAULT
+    ),
+    MIDNIGHT_INDIGO(
+        id = "midnight_indigo",
+        displayName = "Midnight Indigo",
+        config = AppThemeConfig(
+            themeName = "Midnight Indigo",
+            background = "#090A0F",
+            surface = "#12151E",
+            border = "#1E2433",
+            primaryAccent = "#6366F1",
+            secondaryAccent = "#4338CA",
+            textPrimary = "#F8FAFC",
+            textSecondary = "#A5B4FC"
+        )
+    ),
+    OBSIDIAN_CYAN(
+        id = "obsidian_cyan",
+        displayName = "Obsidian Cyan",
+        config = AppThemeConfig(
+            themeName = "Obsidian Cyan",
+            background = "#070B0D",
+            surface = "#0D171B",
+            border = "#17313A",
+            primaryAccent = "#06B6D4",
+            secondaryAccent = "#0E7490",
+            textPrimary = "#ECFEFF",
+            textSecondary = "#A5F3FC"
+        )
+    ),
+    CRIMSON_NOIR(
+        id = "crimson_noir",
+        displayName = "Crimson Noir",
+        config = AppThemeConfig(
+            themeName = "Crimson Noir",
+            background = "#0E080A",
+            surface = "#1A0F12",
+            border = "#3A1A22",
+            primaryAccent = "#F43F5E",
+            secondaryAccent = "#9F1239",
+            textPrimary = "#FFF1F2",
+            textSecondary = "#FDA4AF"
+        )
+    ),
+    CINEMA_GOLD(
+        id = "cinema_gold",
+        displayName = "Cinema Gold",
+        config = AppThemeConfig(
+            themeName = "Cinema Gold",
+            background = "#100D06",
+            surface = "#1A160C",
+            border = "#3B2C12",
+            primaryAccent = "#F59E0B",
+            secondaryAccent = "#B45309",
+            textPrimary = "#FFFBEB",
+            textSecondary = "#FCD34D"
+        )
+    );
+
+    companion object {
+        fun fromStoredValue(value: String?): AppThemePreset =
+            entries.firstOrNull { it.name == value || it.id == value } ?: PINE_MINT
+    }
+}
+
 data class ThemePreferences(
-    val useRemoteTheme: Boolean = true,
+    /** Kept for migration compatibility with older builds; local presets are always authoritative. */
+    val useRemoteTheme: Boolean = false,
     val themeJson: String = AppThemeConfig.DEFAULT_JSON,
     val lastError: String? = null
 ) {
     val activeTheme: AppThemeConfig
-        get() = if (useRemoteTheme) AppThemeConfig.fromJson(themeJson) else AppThemeConfig.DEFAULT
+        get() = AppThemeConfig.DEFAULT
 }
 
 private val Context.altPlayerThemeDataStore: DataStore<Preferences> by preferencesDataStore(
@@ -106,8 +177,8 @@ private val Context.altPlayerThemeDataStore: DataStore<Preferences> by preferenc
 )
 
 /**
- * Fetches only theme.json through the GitHub Contents API. No local media URI, filename, or
- * playback data is sent to the network.
+ * Stores the optional color document separately from local media repositories. The app's active
+ * palette is selected from local presets, so a downloaded document can never replace that choice.
  */
 class RemoteThemeRepository(private val context: Context) {
     private object Keys {
@@ -118,7 +189,7 @@ class RemoteThemeRepository(private val context: Context) {
 
     val preferencesFlow: Flow<ThemePreferences> = context.altPlayerThemeDataStore.data.map { prefs ->
         ThemePreferences(
-            useRemoteTheme = prefs[Keys.USE_REMOTE_THEME] ?: true,
+            useRemoteTheme = prefs[Keys.USE_REMOTE_THEME] ?: false,
             themeJson = prefs[Keys.THEME_JSON] ?: AppThemeConfig.DEFAULT_JSON,
             lastError = prefs[Keys.LAST_ERROR]
         )
@@ -163,14 +234,14 @@ class RemoteThemeRepository(private val context: Context) {
         return try {
             val responseCode = connection.responseCode
             if (responseCode !in 200..299) {
-                throw IOException("GitHub theme request failed ($responseCode)")
+                throw IOException("Theme request failed ($responseCode)")
             }
             require(connection.url.protocol == "https" && connection.url.host == "api.github.com") {
-                "Theme request redirected outside GitHub"
+                "Theme request redirected outside the expected host"
             }
             val apiResponse = connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
             val encodedContent = JSONObject(apiResponse).optString("content").replace("\\s".toRegex(), "")
-            require(encodedContent.isNotBlank()) { "GitHub returned no theme content" }
+            require(encodedContent.isNotBlank()) { "Theme response contained no content" }
             String(Base64.decode(encodedContent, Base64.DEFAULT), Charsets.UTF_8)
         } finally {
             connection.disconnect()

@@ -23,6 +23,7 @@ data class PlaybackPreferencesSnapshot(
     val sortOption: SortOption = SortOption.DATE,
     val sortOrder: SortOrder = SortOrder.DESCENDING,
     val isGridView: Boolean = false,
+    val appThemePreset: AppThemePreset = AppThemePreset.PINE_MINT,
     val resumeBehavior: ResumeBehavior = ResumeBehavior.ASK,
     val defaultOrientation: DefaultOrientation = DefaultOrientation.AUTO,
     val autoLoadSrt: Boolean = true,
@@ -42,6 +43,7 @@ class PlaybackPreferencesRepository(private val context: Context) {
         val SORT_OPTION = stringPreferencesKey("sort_option")
         val SORT_ORDER = stringPreferencesKey("sort_order")
         val IS_GRID_VIEW = booleanPreferencesKey("is_grid_view")
+        val APP_THEME_PRESET = stringPreferencesKey("app_theme_preset")
         val RESUME_BEHAVIOR = stringPreferencesKey("resume_behavior")
         val DEFAULT_ORIENTATION = stringPreferencesKey("default_orientation")
         val AUTO_LOAD_SRT = booleanPreferencesKey("auto_load_srt")
@@ -74,6 +76,7 @@ class PlaybackPreferencesRepository(private val context: Context) {
         val defaultOrientation = prefs[Keys.DEFAULT_ORIENTATION]?.let {
             runCatching { DefaultOrientation.valueOf(it) }.getOrNull()
         } ?: DefaultOrientation.AUTO
+        val appThemePreset = AppThemePreset.fromStoredValue(prefs[Keys.APP_THEME_PRESET])
 
         val subSize = prefs[Keys.SUBTITLE_FONT_SIZE]?.let {
             runCatching { SubtitleFontSize.valueOf(it) }.getOrNull()
@@ -124,6 +127,7 @@ class PlaybackPreferencesRepository(private val context: Context) {
             sortOption = sortOption,
             sortOrder = sortOrder,
             isGridView = prefs[Keys.IS_GRID_VIEW] ?: false,
+            appThemePreset = appThemePreset,
             resumeBehavior = resumeBehavior,
             defaultOrientation = defaultOrientation,
             autoLoadSrt = prefs[Keys.AUTO_LOAD_SRT] ?: true,
@@ -158,6 +162,12 @@ class PlaybackPreferencesRepository(private val context: Context) {
     suspend fun saveResumeBehavior(behavior: ResumeBehavior) {
         context.altPlayerDataStore.edit { prefs ->
             prefs[Keys.RESUME_BEHAVIOR] = behavior.name
+        }
+    }
+
+    suspend fun saveAppThemePreset(preset: AppThemePreset) {
+        context.altPlayerDataStore.edit { prefs ->
+            prefs[Keys.APP_THEME_PRESET] = preset.name
         }
     }
 
